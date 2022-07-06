@@ -1,9 +1,8 @@
-from . import module
-
+from . import module, controller
 class Project:
     def main(self):
         print(f'this is main {self}')
-        sp = module.SerialPort()
+        sp = controller.SerialController()
         print(f'this is serialport {sp}')
         
         pass
