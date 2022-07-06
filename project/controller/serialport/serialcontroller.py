@@ -1,5 +1,4 @@
 from time import sleep
-from tkinter import Frame
 from serial import Serial
 from serial.threaded import Protocol, ReaderThread
 from serial.tools import list_ports
