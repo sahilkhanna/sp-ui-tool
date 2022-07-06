@@ -70,11 +70,6 @@ class SerialController:
     _proto:FixedLengthPacketHandler
     
     def __init__(self, comPortName:str = None, conf:dict = None) -> None:
-        availablePorts = self.list_serial_ports()
-        if comPortName in availablePorts:
-            self._selectedPortName = comPortName
-        else:
-            raise ValueError('Provided port doesn\'t exist')
         if conf:
             for setting in conf:
                 if setting in self._conf:
@@ -82,16 +77,32 @@ class SerialController:
                 else:
                     raise ValueError(f'Unsupported or invalid setting {setting}')
         
+        if comPortName:
+            self.set_comport(comPortName)
+            
         self.connection_callback = lambda : print('connection_callback')
         self.disconnection_callback = lambda : print('disconnection_callback')
-        self._sp = Serial(self._selectedPortName)
-        self._sp.baudrate = self._conf['baudrate']
-        self._sp.bytesize=self._conf['bytesize']
-        self._sp.parity=self._conf['parity']
-        self._sp.stopbits=self._conf['stopbits']
-        self._sp.timeout=self._conf['timeout']
-        self._sp.xonxoff=self._conf['xonxoff']
-        self._sp.rtscts=self._conf['rtscts']
+    
+    def set_comport(self, comPortName):
+        '''\
+        Set comport
+        '''
+        availablePorts = self.list_serial_ports()
+        if comPortName in availablePorts:
+            if self._sp:
+                self.disconnect()
+                self._sp = None
+            self._selectedPortName = comPortName
+            self._sp = Serial(self._selectedPortName)
+            self._sp.baudrate = self._conf['baudrate']
+            self._sp.bytesize=self._conf['bytesize']
+            self._sp.parity=self._conf['parity']
+            self._sp.stopbits=self._conf['stopbits']
+            self._sp.timeout=self._conf['timeout']
+            self._sp.xonxoff=self._conf['xonxoff']
+            self._sp.rtscts=self._conf['rtscts']
+        else:
+            raise ValueError('Provided port doesn\'t exist')
         
     def connect(self):
         '''\
