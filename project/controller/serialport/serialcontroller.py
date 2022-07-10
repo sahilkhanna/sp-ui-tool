@@ -70,6 +70,8 @@ class SerialController:
     _proto:FixedLengthPacketHandler
     
     def __init__(self, comPortName:str = None, conf:dict = None) -> None:
+        
+        self._sp = None
         if conf:
             for setting in conf:
                 if setting in self._conf:
@@ -137,17 +139,17 @@ class SerialController:
         return self._proto
         
     @staticmethod
-    def list_serial_ports() -> dict:
+    def list_serial_ports() -> list:
         ports = list_ports.comports()
-        portList = dict()
+        portList = list()
         for port, description, hwid in ports:
-            portList.update({port : description})
+            portList.append(port)
         return portList
 
     
 
 if __name__ == "__main__":
-    TEST_PORT = 'COM8'
+    TEST_PORT = 'COM9'
     ports = SerialController.list_serial_ports()
     portSetting = {'baudrate':115200}
     sPort = SerialController(TEST_PORT, portSetting)
