@@ -61,8 +61,10 @@ class MainUI:
         self._isConnected = False
 
     def refresh_port_list(self):
-        self._ui[self.KEY_PORT_LIST].update(values=self._controller.list_serial_ports(), set_to_index=0)
-        self._controller.set_comport(self._ui[self.KEY_PORT_LIST].get())
+        portList=self._controller.list_serial_ports()
+        self._ui[self.KEY_PORT_LIST].update(values=portList, set_to_index=0)
+        if len(portList) != 0:
+            self._controller.set_comport(self._ui[self.KEY_PORT_LIST].get())
         
     def open_port_connection(self):
         self._controller.connect()
