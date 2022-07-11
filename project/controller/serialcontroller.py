@@ -110,9 +110,8 @@ class SerialController:
                 self._rt = ReaderThread(self._sp, self.serial_packet_handler)
             except SerialException as e:
                 print(f'Cannot open COM Port:{self._selectedPortName}, {e}')
-                
         else:
-            raise ValueError('Provided port doesn\'t exist')
+            raise ValueError('Port {comPortName} doesn\'t exist')
         
     def connect(self):
         '''\
