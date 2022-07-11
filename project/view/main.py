@@ -59,11 +59,16 @@ class MainUI:
         self._isConnected = False
         self.refresh_port_list()
         
+    def update_console(self, msg:bytearray):
+        self._consoleBuffer = msg.decode("utf-8")
+        self._ui[self.KEY_CONSOLE].print(msg)
         
     def launch(self):
+        self._controller.handle_packet=self.update_console
+        event, values = self._ui.read(timeout=10)
+        self.refresh_port_list()
         while True:
             event, values = self._ui.read(timeout=10)
-            # print(f'event = {event}, values = {values}')
             if event == gui.WIN_CLOSED:
                 break
             elif event == self.KEY_REFRESH_PORT_LIST:

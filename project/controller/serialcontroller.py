@@ -1,5 +1,5 @@
 from time import sleep
-from serial import Serial
+from serial import Serial, SerialException
 from serial.threaded import Protocol, ReaderThread
 from serial.tools import list_ports
         
@@ -33,6 +33,8 @@ class FixedLengthPacketHandler(Protocol):
             self.buffer = self.buffer[self.PACKET_LENGTH:]
             print(f'data:{temp_buff}')
             # TODO: Handle this
+            if self.controller and self.controller.handle_packet:
+                self.controller.handle_packet(temp_buff)
             
     
     def send_data(self, data):
@@ -84,6 +86,7 @@ class SerialController:
             
         self.connection_callback = lambda : print('connection_callback')
         self.disconnection_callback = lambda : print('disconnection_callback')
+        self.handle_packet = lambda : print('handle_packet')
     
     def set_comport(self, comPortName):
         '''\
@@ -95,14 +98,19 @@ class SerialController:
                 self.disconnect()
                 self._sp = None
             self._selectedPortName = comPortName
-            self._sp = Serial(self._selectedPortName)
-            self._sp.baudrate = self._conf['baudrate']
-            self._sp.bytesize=self._conf['bytesize']
-            self._sp.parity=self._conf['parity']
-            self._sp.stopbits=self._conf['stopbits']
-            self._sp.timeout=self._conf['timeout']
-            self._sp.xonxoff=self._conf['xonxoff']
-            self._sp.rtscts=self._conf['rtscts']
+            try:
+                self._sp = Serial(self._selectedPortName)
+                self._sp.baudrate = self._conf['baudrate']
+                self._sp.bytesize=self._conf['bytesize']
+                self._sp.parity=self._conf['parity']
+                self._sp.stopbits=self._conf['stopbits']
+                self._sp.timeout=self._conf['timeout']
+                self._sp.xonxoff=self._conf['xonxoff']
+                self._sp.rtscts=self._conf['rtscts']
+                self._rt = ReaderThread(self._sp, self.serial_packet_handler)
+            except SerialException as e:
+                print(f'Cannot open COM Port:{self._selectedPortName}, {e}')
+                
         else:
             raise ValueError('Provided port doesn\'t exist')
         
@@ -110,8 +118,10 @@ class SerialController:
         '''\
         Attempts to connect to the specified serial port
         '''
-        self._rt = ReaderThread(self._sp, self.serial_packet_handler)
-        self._rt.start()
+        try:
+            self._rt.start()
+        except AttributeError as e:
+            print(f'Cannot connect to port:{self._selectedPortName}, {e}')
                 
     def disconnect(self):
         '''\
