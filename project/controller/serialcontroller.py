@@ -34,7 +34,7 @@ class FixedLengthPacketHandler(Protocol):
             print(f'data:{temp_buff}')
             # TODO: Handle this
             if self.controller and self.controller.handle_packet:
-                self.controller.handle_packet(temp_buff)
+                self.controller.handle_packet('[RX]: ' + temp_buff.decode())
             
     
     def send_data(self, data):
@@ -143,6 +143,9 @@ class SerialController:
         self._sp = None
         print(f'Context ended for {self._selectedPortName}')
         print(exc_type)
+    
+    def send_packet(self, msg):
+        self._proto.send_data(msg)
     
     def serial_packet_handler(self):
         self._proto = FixedLengthPacketHandler(self)
