@@ -92,9 +92,10 @@ class MainUI:
         if msg is not None:
             self._ui[self.KEY_SEND_MSG_INPUT].update(value=msg)
         
-    def send_msg(self, msg):
-        self._controller.send_packet(msg.encode())
-        self.update_console(self.APPEND_TX_MSG + msg)
+    def send_msg(self, msg:str):
+        if len(msg) > 0:
+            self._controller.send_packet(msg.encode())
+            self.update_console(self.APPEND_TX_MSG + msg)
         
     def update_console(self, msg):
         if self.APPEND_TX_MSG in msg:
