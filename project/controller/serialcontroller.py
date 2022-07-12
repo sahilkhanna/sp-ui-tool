@@ -31,10 +31,10 @@ class FixedLengthPacketHandler(Protocol):
         if len(self.buffer) >= self.PACKET_LENGTH:
             temp_buff = self.buffer[:self.PACKET_LENGTH]
             self.buffer = self.buffer[self.PACKET_LENGTH:]
-            print(f'data:{temp_buff}')
             # TODO: Handle this
             if self.controller and self.controller.handle_packet:
-                self.controller.handle_packet(temp_buff)
+                convhex = " ".join(["{:02x}".format(bytes) for bytes in temp_buff])
+                self.controller.handle_packet('[RX]: ' + convhex.upper())
             
     
     def send_data(self, data):
@@ -110,9 +110,8 @@ class SerialController:
                 self._rt = ReaderThread(self._sp, self.serial_packet_handler)
             except SerialException as e:
                 print(f'Cannot open COM Port:{self._selectedPortName}, {e}')
-                
         else:
-            raise ValueError('Provided port doesn\'t exist')
+            raise ValueError('Port {comPortName} doesn\'t exist')
         
     def connect(self):
         '''\
@@ -143,6 +142,9 @@ class SerialController:
         self._sp = None
         print(f'Context ended for {self._selectedPortName}')
         print(exc_type)
+    
+    def send_packet(self, msg):
+        self._proto.send_data(msg)
     
     def serial_packet_handler(self):
         self._proto = FixedLengthPacketHandler(self)
