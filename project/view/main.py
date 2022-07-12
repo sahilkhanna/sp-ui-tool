@@ -18,9 +18,14 @@ class MainUI:
     KEY_CONSOLE_MENU_COPY_ALL = "Copy All"
     CONSOLE_RIGHT_CLICK_MENU = ['',[KEY_CONSOLE_MENU_COPY_SELECTED, KEY_CONSOLE_MENU_COPY_ALL]]
     
-    MENU_DEF = [['File', ['Open Project', 'Save Project', 'Exit'  ]],      
-                ['Edit', ['Baudrate', ['9600', '115200', ], 'Encoding',['bytes','string']], ],      
-                ['Help', 'About...'], ]   
+    EV_MENU_OPEN_PROJECT = 'Open Project'
+    EV_MENU_SAVE_PROJECT = 'Save Project'
+    EV_MENU_ABOUT = '&About'
+    EV_MENU_BAUDRATE_9600 = '9600'
+    EV_MENU_BAUDRATE_115200 = '115200'
+    MENU_DEF = [['&File', [EV_MENU_OPEN_PROJECT, EV_MENU_SAVE_PROJECT, 'Exit'  ]],      
+                ['&Edit', ['&Baudrate', [EV_MENU_BAUDRATE_9600, EV_MENU_BAUDRATE_115200, ], '&Encoding',['bytes','string']], ],      
+                ['&Help', EV_MENU_ABOUT], ]   
     
     APPEND_TX_MSG = "[TX]: "
     
@@ -33,7 +38,7 @@ class MainUI:
         # First the window layout in 2 columns
         gui.theme('DarkBlue')
         conf_column = [
-            [gui.Text("Config:")],
+            [gui.Text("Project Setting:")],
                 [gui.Combo(values="",tooltip="Select Com Port", readonly=True, default_value="Select Port", 
                            size=self.LEFT_COLUMN_WIDTH-20, enable_events=True, key=self.KEY_PORT_LIST),
                  gui.Push(), gui.Button(button_text='Refresh', key=self.KEY_REFRESH_PORT_LIST),
@@ -45,8 +50,10 @@ class MainUI:
             [gui.Listbox(values=self._msgList, select_mode=gui.LISTBOX_SELECT_MODE_SINGLE, enable_events=True, 
                          size=(self.LEFT_COLUMN_WIDTH, 20), background_color='#0a1016', key=self.KEY_MSG_LIST,
                          horizontal_scroll=True, expand_x=True, expand_y=True)],
-            [gui.Push(), gui.Button(button_text='+', key=self.KEY_ADD_MSG_BTN, size=(5,1)),
-             gui.Button(button_text='-', key=self.KEY_REMOVE_MSG_BTN, size=(5,1)),]
+            [gui.Push(), gui.Button(button_text='+', key=self.KEY_ADD_MSG_BTN, 
+                                    tooltip='Add Message to list', size=(5,1)),
+             gui.Button(button_text='-', key=self.KEY_REMOVE_MSG_BTN, 
+                                    tooltip='Remove Message to list', size=(5,1)),]
         ]
         # For now will only show the name of the file that was chosen
         console_column = [
@@ -105,13 +112,30 @@ class MainUI:
         if len(msg) > 0:
             self._controller.send_packet(bytearray.fromhex(msg))
             self.update_console(self.APPEND_TX_MSG + msg)
+        else:
+            gui.popup_error("Message is empty! No can do", title="Yuck", 
+                            auto_close=True, auto_close_duration=3, no_titlebar=True)
         
     def update_console(self, msg):
         if self.APPEND_TX_MSG in msg:
             gui.cprint(msg, t='green')
         else:
             gui.cprint(msg, t='red')
+    
+    def about_popup(self):
+        gui.popup('Serial Port Gui Tool', 'Sahil Khanna', 'https://github.com/sahilkhanna/sp-ui-tool',
+                    grab_anywhere=True)
+    
+    def open_project_file(self):
+        filename = gui.popup_get_file('file to open', file_types=(( 'Porty Project (.prtyprj)','.prtyprj'),), no_window=True)
+        print(filename)
+    def save_project_file(self):
+        # filename = gui.popup_get_file('file to open', no_window=True)
+        print('save')
         
+    def _debug_print_var(self, var):
+        print(f'{var}')
+    
     def launch(self):
         self._controller.handle_packet=self.update_console
         event, values = self._ui.read(timeout=10)
@@ -138,7 +162,19 @@ class MainUI:
             elif event == self.KEY_SEND_MSG_BTN:
                 self.send_msg(values[self.KEY_SEND_MSG_INPUT])
             elif event == self.KEY_MSG_LIST:
-                self.update_send_msg_input(values[self.KEY_MSG_LIST][0])
+                try:
+                    self.update_send_msg_input(values[self.KEY_MSG_LIST][0])
+                except IndexError:
+                    pass
+            elif event == self.EV_MENU_OPEN_PROJECT:
+                self.open_project_file()
+            elif event == self.EV_MENU_SAVE_PROJECT:
+                self.save_project_file()
+            elif event == self.EV_MENU_ABOUT:
+                self.about_popup()
+            elif event == self.EV_MENU_BAUDRATE_9600:
+                self._debug_print_var((event, values))
+                
             
                 
 
