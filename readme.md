@@ -1,4 +1,4 @@
-# Python Boilerplate Project
+# Serial Port GUI Tool
 
 This is a boilerplate template for python project
 
@@ -31,5 +31,5 @@ python entry.py
 Make sure to run this in the virtual environment.
 
 ```
-pyinstaller --name="Project Name" --onefile entry.py
+pyinstaller --name="Porty" --noconsole --onefile entry.py
 ```
