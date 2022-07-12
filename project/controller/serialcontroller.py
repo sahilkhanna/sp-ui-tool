@@ -31,10 +31,10 @@ class FixedLengthPacketHandler(Protocol):
         if len(self.buffer) >= self.PACKET_LENGTH:
             temp_buff = self.buffer[:self.PACKET_LENGTH]
             self.buffer = self.buffer[self.PACKET_LENGTH:]
-            print(f'data:{temp_buff}')
             # TODO: Handle this
             if self.controller and self.controller.handle_packet:
-                self.controller.handle_packet('[RX]: ' + temp_buff.decode())
+                convhex = " ".join(["{:02x}".format(bytes) for bytes in temp_buff])
+                self.controller.handle_packet('[RX]: ' + convhex.upper())
             
     
     def send_data(self, data):

@@ -39,7 +39,8 @@ class MainUI:
                        size=(self.LEFT_COLUMN_WIDTH-5, 20), key=self.KEY_SEND_MSG_INPUT),
              gui.Button(button_text='Send', key=self.KEY_SEND_MSG_BTN, disabled=True)],
             [gui.Listbox(values=self._msgList, select_mode=gui.LISTBOX_SELECT_MODE_SINGLE, enable_events=True, 
-                         size=(self.LEFT_COLUMN_WIDTH, 20), background_color='#0a1016', key=self.KEY_MSG_LIST)],
+                         size=(self.LEFT_COLUMN_WIDTH, 20), background_color='#0a1016', key=self.KEY_MSG_LIST,
+                           expand_x=True, expand_y=True)],
             [gui.Push(), gui.Button(button_text='+', key=self.KEY_ADD_MSG_BTN, size=(5,1)),
              gui.Button(button_text='-', key=self.KEY_REMOVE_MSG_BTN, size=(5,1)),]
         ]
@@ -48,15 +49,16 @@ class MainUI:
             [gui.Text("Console:"), gui.Push(),
              gui.Button(button_text='Clear', key=self.KEY_CLEAR_TERMINAL)],
             [gui.Multiline(size=(self.RIGHT_COLUMN_WIDTH, 26), write_only=True, 
-                           background_color='#0a1016', text_color='green', key=self.KEY_CONSOLE)],
+                           background_color='#0a1016', text_color='green', key=self.KEY_CONSOLE,
+                           expand_x=True, expand_y=True)],
         ]
         # ----- Full layout -----
         self._layout = [
-            [gui.Column(conf_column),
+            [gui.Column(conf_column, expand_x=True, expand_y=True),
             gui.VSeperator(),
-            gui.Column(console_column),]
+            gui.Column(console_column, expand_x=True, expand_y=True),]
         ]
-        self._ui = gui.Window(title, self._layout)
+        self._ui = gui.Window(title, self._layout, resizable=True)
         gui.cprint_set_output_destination(self._ui, self.KEY_CONSOLE)
         self._isConnected = False
 
@@ -96,7 +98,7 @@ class MainUI:
         
     def send_msg(self, msg:str):
         if len(msg) > 0:
-            self._controller.send_packet(msg.encode())
+            self._controller.send_packet(bytearray.fromhex(msg))
             self.update_console(self.APPEND_TX_MSG + msg)
         
     def update_console(self, msg):
