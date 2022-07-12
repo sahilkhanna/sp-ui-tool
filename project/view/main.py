@@ -19,11 +19,13 @@ class MainUI:
     CONSOLE_RIGHT_CLICK_MENU = ['',[KEY_CONSOLE_MENU_COPY_SELECTED, KEY_CONSOLE_MENU_COPY_ALL]]
     
     EV_MENU_OPEN_PROJECT = 'Open Project'
-    EV_MENU_SAVE_PROJECT = 'Save Project'
+    EV_MENU_SAVE_PROJECT = 'Save'
+    EV_MENU_SAVE_AS_PROJECT = 'Save as'
+    EV_MENU_QUIT = 'Quit'
     EV_MENU_ABOUT = '&About'
     EV_MENU_BAUDRATE_9600 = '9600'
     EV_MENU_BAUDRATE_115200 = '115200'
-    MENU_DEF = [['&File', [EV_MENU_OPEN_PROJECT, EV_MENU_SAVE_PROJECT, 'Exit'  ]],      
+    MENU_DEF = [['&File', [EV_MENU_OPEN_PROJECT, EV_MENU_SAVE_PROJECT, EV_MENU_SAVE_AS_PROJECT, EV_MENU_QUIT ]],      
                 ['&Edit', ['&Baudrate', [EV_MENU_BAUDRATE_9600, EV_MENU_BAUDRATE_115200, ], '&Encoding',['bytes','string']], ],      
                 ['&Help', EV_MENU_ABOUT], ]   
     
@@ -42,7 +44,7 @@ class MainUI:
                 [gui.Combo(values="",tooltip="Select Com Port", readonly=True, default_value="Select Port", 
                            size=self.LEFT_COLUMN_WIDTH-20, enable_events=True, key=self.KEY_PORT_LIST),
                  gui.Push(), gui.Button(button_text='Refresh', key=self.KEY_REFRESH_PORT_LIST),
-                 gui.Button(button_text='Open', key=self.KEY_OPEN_PORT)],
+                 gui.Button(button_text='Open', key=self.KEY_OPEN_PORT, size=(8,1))],
                 [gui.HSeparator()],
             [gui.Input(default_text='', background_color='#0a1016', disabled_readonly_background_color='#16232e', 
                        size=(self.LEFT_COLUMN_WIDTH-5, 20), key=self.KEY_SEND_MSG_INPUT),
@@ -81,17 +83,24 @@ class MainUI:
             self._controller.set_comport(self._ui[self.KEY_PORT_LIST].get())
         
     def open_port_connection(self):
-        self._controller.connect()
         self._ui[self.KEY_PORT_LIST].update(disabled=True)
-        self._ui[self.KEY_OPEN_PORT].update(text='Close')
+        self._ui[self.KEY_OPEN_PORT].update(text='Opening')
+        self._ui.read(timeout=1)
+        self._controller.connect()
+ 
+    def port_connected_cb(self):
         self._ui[self.KEY_SEND_MSG_BTN].update(disabled=False)
         self._isConnected = True
-        
+                
     def close_port_connection(self):
+        self._ui[self.KEY_OPEN_PORT].update(text='Closing')
+        self._ui.read(timeout=1)
         self._controller.disconnect()
-        self._ui[self.KEY_PORT_LIST].update(disabled=False)
-        self._ui[self.KEY_OPEN_PORT].update(text='Open')
-        self._ui[self.KEY_SEND_MSG_BTN].update(disabled=True)
+ 
+    def port_disconnected_cb(self):
+        # self._ui[self.KEY_PORT_LIST].update(disabled=False)
+        # self._ui[self.KEY_OPEN_PORT].update(text='Open')
+        # self._ui[self.KEY_SEND_MSG_BTN].update(disabled=True)
         self._isConnected = False
         self.refresh_port_list()
         
@@ -129,20 +138,24 @@ class MainUI:
     def open_project_file(self):
         filename = gui.popup_get_file('file to open', file_types=(( 'Porty Project (.prtyprj)','.prtyprj'),), no_window=True)
         print(filename)
-    def save_project_file(self):
-        # filename = gui.popup_get_file('file to open', no_window=True)
-        print('save')
+    def saveas_project_file(self):
+        filename = gui.popup_get_file('file to Save', file_types=(( 'Porty Project (.prtyprj)','.prtyprj'),), save_as=True,no_window=True)
+        print(filename)
         
     def _debug_print_var(self, var):
         print(f'{var}')
     
     def launch(self):
-        self._controller.handle_packet=self.update_console
+        #  Setup Callbacks for connections
+        self._controller.handle_packet = self.update_console
+        self._controller.connection_callback = self.port_connected_cb
+        self._controller.disconnection_callback = self.port_disconnected_cb
+        
         event, values = self._ui.read(timeout=10)
         self.refresh_port_list()
         while True:
             event, values = self._ui.read(timeout=10)
-            if event == gui.WIN_CLOSED:
+            if event in [gui.WIN_CLOSED, self.EV_MENU_QUIT]:
                 break
             elif event == self.KEY_REFRESH_PORT_LIST:
                 self.refresh_port_list()
@@ -168,15 +181,20 @@ class MainUI:
                     pass
             elif event == self.EV_MENU_OPEN_PROJECT:
                 self.open_project_file()
-            elif event == self.EV_MENU_SAVE_PROJECT:
+            elif event == self.EV_MENU_SAVE_AS_PROJECT:
                 self.save_project_file()
             elif event == self.EV_MENU_ABOUT:
                 self.about_popup()
             elif event == self.EV_MENU_BAUDRATE_9600:
                 self._debug_print_var((event, values))
+            if self._isConnected:
+                self._ui[self.KEY_PORT_LIST].update(disabled=True)
+                self._ui[self.KEY_OPEN_PORT].update(text='Close')
+                self._ui[self.KEY_SEND_MSG_BTN].update(disabled=False)
+            else:
+                self._ui[self.KEY_PORT_LIST].update(disabled=False)
+                self._ui[self.KEY_OPEN_PORT].update(text='Open')
+                self._ui[self.KEY_SEND_MSG_BTN].update(disabled=True)
                 
-            
-                
-
         # Finish up by removing from the screen
         self._ui.close()
