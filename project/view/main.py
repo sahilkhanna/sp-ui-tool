@@ -18,6 +18,10 @@ class MainUI:
     KEY_CONSOLE_MENU_COPY_ALL = "Copy All"
     CONSOLE_RIGHT_CLICK_MENU = ['',[KEY_CONSOLE_MENU_COPY_SELECTED, KEY_CONSOLE_MENU_COPY_ALL]]
     
+    MENU_DEF = [['File', ['Open Project', 'Save Project', 'Exit'  ]],      
+                ['Edit', ['Baudrate', ['9600', '115200', ], 'Encoding',['bytes','string']], ],      
+                ['Help', 'About...'], ]   
+    
     APPEND_TX_MSG = "[TX]: "
     
     LEFT_COLUMN_WIDTH = 40
@@ -40,7 +44,7 @@ class MainUI:
              gui.Button(button_text='Send', key=self.KEY_SEND_MSG_BTN, disabled=True)],
             [gui.Listbox(values=self._msgList, select_mode=gui.LISTBOX_SELECT_MODE_SINGLE, enable_events=True, 
                          size=(self.LEFT_COLUMN_WIDTH, 20), background_color='#0a1016', key=self.KEY_MSG_LIST,
-                           expand_x=True, expand_y=True)],
+                         horizontal_scroll=True, expand_x=True, expand_y=True)],
             [gui.Push(), gui.Button(button_text='+', key=self.KEY_ADD_MSG_BTN, size=(5,1)),
              gui.Button(button_text='-', key=self.KEY_REMOVE_MSG_BTN, size=(5,1)),]
         ]
@@ -54,6 +58,7 @@ class MainUI:
         ]
         # ----- Full layout -----
         self._layout = [
+            [gui.Menu(self.MENU_DEF)],
             [gui.Column(conf_column, expand_x=True, expand_y=True),
             gui.VSeperator(),
             gui.Column(console_column, expand_x=True, expand_y=True),]
