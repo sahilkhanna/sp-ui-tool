@@ -19,6 +19,7 @@ class FixedLengthPacketHandler(Protocol):
         super(FixedLengthPacketHandler, self).connection_made(transport)
         print(f'Serial connection made for {transport.serial.name}')
         self.transport = transport
+        self.buffer = bytearray()
         if self.controller and self.controller.connection_callback:
             self.controller.connection_callback()
 
@@ -51,6 +52,7 @@ class FixedLengthPacketHandler(Protocol):
         """
         print(f'Connection Lost')
         self.transport = None
+        self.buffer = bytearray()
         if self.controller and self.controller.disconnection_callback:
             self.controller.disconnection_callback()
         if isinstance(exc, Exception):
