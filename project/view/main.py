@@ -112,6 +112,7 @@ class MainUI:
             if msg in self._msgList:
                 self._msgList.remove(msg)
         self._ui[self.KEY_MSG_LIST].update(values=self._msgList)
+        self._controller.update_send_sequence(self._msgList)
         
     def update_send_msg_input(self, msg):
         if msg is not None:
@@ -137,10 +138,12 @@ class MainUI:
     
     def open_project_file(self):
         filename = gui.popup_get_file('file to open', file_types=(( 'Porty Project (.prtyprj)','.prtyprj'),), no_window=True)
-        print(filename)
+        self._controller.open_project_settings(filename)
+        self._msgList = self._controller.get_send_sequences()
+        self._ui[self.KEY_MSG_LIST].update(values=self._msgList)
     def saveas_project_file(self):
         filename = gui.popup_get_file('file to Save', file_types=(( 'Porty Project (.prtyprj)','.prtyprj'),), save_as=True,no_window=True)
-        print(filename)
+        self._controller.save_project_settings(filename)
         
     def _debug_print_var(self, var):
         print(f'{var}')
@@ -182,7 +185,7 @@ class MainUI:
             elif event == self.EV_MENU_OPEN_PROJECT:
                 self.open_project_file()
             elif event == self.EV_MENU_SAVE_AS_PROJECT:
-                self.save_project_file()
+                self.saveas_project_file()
             elif event == self.EV_MENU_ABOUT:
                 self.about_popup()
             elif event == self.EV_MENU_BAUDRATE_9600:

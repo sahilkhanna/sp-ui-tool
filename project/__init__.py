@@ -1,9 +1,11 @@
 from .view import MainUI
 from .controller import SerialController
+from .model import MainModel
 
 class Project:
     def main(self):
-        serialPort = SerialController()
+        mainModel = MainModel()
+        serialPort = SerialController(mainModel)
         mainWindow = MainUI('Porty', serialPort)
         mainWindow.launch()
         

@@ -2,6 +2,8 @@ from time import sleep
 from serial import Serial, SerialException
 from serial.threaded import Protocol, ReaderThread
 from serial.tools import list_ports
+
+from project.model.main import MainModel
         
 class FixedLengthPacketHandler(Protocol):
     """\
@@ -73,19 +75,18 @@ class SerialController:
     _rt:ReaderThread
     _proto:FixedLengthPacketHandler
     
-    def __init__(self, comPortName:str = None, conf:dict = None) -> None:
+    def __init__(self, model:MainModel) -> None:
         
         self._sp = None
+        self._model= model
+        conf = self._model.get_all_port_settings()
+        print(conf)
         if conf:
             for setting in conf:
                 if setting in self._conf:
                     self._conf[setting]=conf[setting]
                 else:
-                    raise ValueError(f'Unsupported or invalid setting {setting}')
-        
-        if comPortName:
-            self.set_comport(comPortName)
-            
+                    raise ValueError(f'Unsupported or invalid setting {setting}')                   
         self.connection_callback = lambda : print('connection_callback')
         self.disconnection_callback = lambda : print('disconnection_callback')
         self.handle_packet = lambda : print('handle_packet')
@@ -151,6 +152,16 @@ class SerialController:
     def serial_packet_handler(self):
         self._proto = FixedLengthPacketHandler(self)
         return self._proto
+    
+    def save_project_settings(self, filename:str):
+        self._model.save_project_file(filename)
+    def open_project_settings(self, filename:str):
+        self._model.load_project_file(filename)
+        
+    def update_send_sequence(self, sequence:list):
+        self._model.update_send_sequence(sequence)
+    def get_send_sequences(self)->list:
+        return self._model.get_sequences()
         
     @staticmethod
     def list_serial_ports() -> list:
@@ -166,7 +177,8 @@ if __name__ == "__main__":
     TEST_PORT = 'COM9'
     ports = SerialController.list_serial_ports()
     portSetting = {'baudrate':115200}
-    sPort = SerialController(TEST_PORT, portSetting)
+    sPort = SerialController()
+    sPort.set_comport(TEST_PORT)
     with sPort as device:
         sleep(1)
     print('End')
