@@ -10,18 +10,20 @@ class FixedLengthPacketHandler(Protocol):
     Modified Protocol as used by the ReaderThread. 
     """
     PACKET_LENGTH = 256
+    isConnected:bool
     def __init__(self, controller):
         super().__init__()
         self.buffer = bytearray()
         self.controller = controller
         self.transport = None
+        self.isConnected = False
         
     def connection_made(self, transport):
         """Called when reader thread is started"""
         super(FixedLengthPacketHandler, self).connection_made(transport)
-        print(f'Serial connection made for {transport.serial.name}')
         self.transport = transport
         self.buffer = bytearray()
+        self.isConnected = True
         if self.controller and self.controller.connection_callback:
             self.controller.connection_callback()
 
@@ -52,9 +54,9 @@ class FixedLengthPacketHandler(Protocol):
         Called when the serial port is closed or the reader loop terminated
         otherwise.
         """
-        print(f'Connection Lost')
         self.transport = None
         self.buffer = bytearray()
+        self.isConnected = False
         if self.controller and self.controller.disconnection_callback:
             self.controller.disconnection_callback()
         if isinstance(exc, Exception):
@@ -78,6 +80,7 @@ class SerialController:
     def __init__(self, model:MainModel) -> None:
         
         self._sp = None
+        self._proto = None
         self._model= model
         conf = self._model.get_all_port_settings()
         print(conf)
@@ -91,17 +94,20 @@ class SerialController:
         self.disconnection_callback = lambda : print('disconnection_callback')
         self.handle_packet = lambda : print('handle_packet')
     
-    def set_comport(self, comPortName:str):
+    def set_comport(self, comPortName:str, conf:dict = None):
         '''\
         Set comport
         '''
         availablePorts = self.list_serial_ports()
         if comPortName in availablePorts:
             if self._sp:
-                self.disconnect()
+                if self._sp.is_open:
+                    self.disconnect()
                 self._sp = None
             self._selectedPortName = comPortName
             try:
+                if conf:
+                    self._conf = conf
                 self._sp = Serial(self._selectedPortName)
                 self._sp.baudrate = self._conf['baudrate']
                 self._sp.bytesize=self._conf['bytesize']
@@ -114,7 +120,7 @@ class SerialController:
             except SerialException as e:
                 print(f'Cannot open COM Port:{self._selectedPortName}, {e}')
         else:
-            raise ValueError('Port {comPortName} doesn\'t exist')
+            raise ValueError(f'Port {comPortName} doesn\'t exist')
         
     def connect(self):
         '''\
@@ -129,7 +135,7 @@ class SerialController:
         '''\
         Attempts to disconnect to the specified serial port
         '''
-        if self._rt is not None:
+        if self._proto is not None:
             try:
                 self._rt.close()
             except Exception as e:

@@ -10,7 +10,7 @@ class MainController():
         pass
     
     def set_device_port(self, comPort:str):
-        self._serialController.set_comport(comPort)
+        self._serialController.set_comport(comPortName = comPort, conf=self._mainModel.get_all_port_settings())
         self._mainModel.update_port_name(comPort)
     def connect_to_device(self):
         self._serialController.connect()
@@ -18,6 +18,9 @@ class MainController():
         self._serialController.disconnect()
     def send_packet(self, msg):
         self._serialController.send_packet(msg)
+    def update_port_baudrate(self, baudrate):
+        self._mainModel.update_setting_baudrate(baudrate)
+        self._serialController.set_comport(comPortName = self._mainModel.get_port_name(), conf=self._mainModel.get_all_port_settings())
     def update_serial_cb(self, handlePacketCb, connectionCb, disconnectionCb):
         self._serialController.handle_packet = handlePacketCb
         self._serialController.connection_callback = connectionCb
