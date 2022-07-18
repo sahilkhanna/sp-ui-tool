@@ -91,7 +91,7 @@ class SerialController:
         self.disconnection_callback = lambda : print('disconnection_callback')
         self.handle_packet = lambda : print('handle_packet')
     
-    def set_comport(self, comPortName):
+    def set_comport(self, comPortName:str):
         '''\
         Set comport
         '''
@@ -153,15 +153,6 @@ class SerialController:
         self._proto = FixedLengthPacketHandler(self)
         return self._proto
     
-    def save_project_settings(self, filename:str):
-        self._model.save_project_file(filename)
-    def open_project_settings(self, filename:str):
-        self._model.load_project_file(filename)
-        
-    def update_send_sequence(self, sequence:list):
-        self._model.update_send_sequence(sequence)
-    def get_send_sequences(self)->list:
-        return self._model.get_sequences()
         
     @staticmethod
     def list_serial_ports() -> list:

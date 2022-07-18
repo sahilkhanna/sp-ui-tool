@@ -1,7 +1,6 @@
-from faulthandler import disable
-from operator import contains
 import PySimpleGUI as gui
 from project.controller.serialcontroller import SerialController
+from project.controller.maincontroller import MainController
 class MainUI:
     KEY_MSG_LIST = "MSG_LIST"
     KEY_PORT_LIST = "PORT_LIST"
@@ -33,7 +32,7 @@ class MainUI:
     
     LEFT_COLUMN_WIDTH = 40
     RIGHT_COLUMN_WIDTH = 80
-    _controller: SerialController
+    _controller: MainController
     def __init__(self, title:str, controller) -> None:
         self._controller = controller
         self._msgList = []
@@ -75,18 +74,22 @@ class MainUI:
         self._ui = gui.Window(title, self._layout, resizable=True)
         gui.cprint_set_output_destination(self._ui, self.KEY_CONSOLE)
         self._isConnected = False
-
+    
+    def set_port(self, portName:str):
+        self._controller.set_device_port(portName)
+        self._ui[self.KEY_PORT_LIST].update(value=portName)
+        
     def refresh_port_list(self):
         portList=self._controller.list_serial_ports()
         self._ui[self.KEY_PORT_LIST].update(values=portList, set_to_index=0)
         if len(portList) != 0:
-            self._controller.set_comport(self._ui[self.KEY_PORT_LIST].get())
+            self.set_port(self._ui[self.KEY_PORT_LIST].get())
         
     def open_port_connection(self):
         self._ui[self.KEY_PORT_LIST].update(disabled=True)
         self._ui[self.KEY_OPEN_PORT].update(text='Opening')
         self._ui.read(timeout=1)
-        self._controller.connect()
+        self._controller.connect_to_device()
  
     def port_connected_cb(self):
         self._ui[self.KEY_SEND_MSG_BTN].update(disabled=False)
@@ -95,12 +98,9 @@ class MainUI:
     def close_port_connection(self):
         self._ui[self.KEY_OPEN_PORT].update(text='Closing')
         self._ui.read(timeout=1)
-        self._controller.disconnect()
+        self._controller.disconnect_from_device()
  
     def port_disconnected_cb(self):
-        # self._ui[self.KEY_PORT_LIST].update(disabled=False)
-        # self._ui[self.KEY_OPEN_PORT].update(text='Open')
-        # self._ui[self.KEY_SEND_MSG_BTN].update(disabled=True)
         self._isConnected = False
         self.refresh_port_list()
         
@@ -141,6 +141,7 @@ class MainUI:
         self._controller.open_project_settings(filename)
         self._msgList = self._controller.get_send_sequences()
         self._ui[self.KEY_MSG_LIST].update(values=self._msgList)
+        self.set_port(self._controller.get_saved_port_name())
     def saveas_project_file(self):
         filename = gui.popup_get_file('file to Save', file_types=(( 'Porty Project (.prtyprj)','.prtyprj'),), save_as=True,no_window=True)
         self._controller.save_project_settings(filename)
@@ -150,9 +151,7 @@ class MainUI:
     
     def launch(self):
         #  Setup Callbacks for connections
-        self._controller.handle_packet = self.update_console
-        self._controller.connection_callback = self.port_connected_cb
-        self._controller.disconnection_callback = self.port_disconnected_cb
+        self._controller.update_serial_cb(self.update_console, self.port_connected_cb, self.port_disconnected_cb)
         
         event, values = self._ui.read(timeout=10)
         self.refresh_port_list()
@@ -163,7 +162,7 @@ class MainUI:
             elif event == self.KEY_REFRESH_PORT_LIST:
                 self.refresh_port_list()
             elif event == self.KEY_PORT_LIST:
-                self._controller.set_comport(values[self.KEY_PORT_LIST])
+                self.set_port(values[self.KEY_PORT_LIST])
             elif event == self.KEY_OPEN_PORT:
                 if self._isConnected:
                     self.close_port_connection()

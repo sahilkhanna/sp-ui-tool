@@ -1,6 +1,7 @@
 import json
 class MainModel():
     def __init__(self) -> None:
+        self._portName=''
         self._portSettings = {
         'baudrate':115200,
         'bytesize':8,
@@ -15,8 +16,10 @@ class MainModel():
     def get_all_port_settings(self)->dict:
         return self._portSettings
     
-    # def update_setting_serialPortName(self, portName):
-    #     self._portSettings['serialPortName'] = portName   
+    def update_port_name(self, portName:str):
+        self._portName = portName   
+    def get_port_name(self)->str:
+        return self._portName
     def update_setting_baudrate(self, baudrate:int):
         self._portSettings['baudrate'] = baudrate           
     def update_setting_bytesize(self, bytesize:int):
@@ -39,6 +42,7 @@ class MainModel():
     
     def save_project_file(self, filepath:str):
         outData = {
+            'port':self._portName,
             'portSetting':self._portSettings,
             'sequences':self._sendSequence
         }
@@ -51,4 +55,8 @@ class MainModel():
             projectSetting = json.load(projectFile)
             if 'sequences' in  projectSetting:
                 self._sendSequence = projectSetting['sequences']
+            if 'port' in projectSetting:
+                self._portName = projectSetting['port']
+            if 'portSetting' in projectSetting:
+                self._portSettings = projectSetting['portSetting']
         return True
