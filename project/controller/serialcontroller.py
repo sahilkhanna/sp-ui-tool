@@ -2,40 +2,54 @@ from time import sleep
 from serial import Serial, SerialException
 from serial.threaded import Protocol, ReaderThread
 from serial.tools import list_ports
+
+from project.model.main import MainModel
         
 class FixedLengthPacketHandler(Protocol):
     """\
     Modified Protocol as used by the ReaderThread. 
     """
     PACKET_LENGTH = 256
+    isConnected:bool
     def __init__(self, controller):
         super().__init__()
         self.buffer = bytearray()
         self.controller = controller
         self.transport = None
+        self.isConnected = False
         
     def connection_made(self, transport):
         """Called when reader thread is started"""
         super(FixedLengthPacketHandler, self).connection_made(transport)
-        print(f'Serial connection made for {transport.serial.name}')
         self.transport = transport
         self.buffer = bytearray()
+        self.isConnected = True
         if self.controller and self.controller.connection_callback:
             self.controller.connection_callback()
 
+    def chunk_and_handle_packets(self, big_buff:bytearray)->bytearray:
+        small_buff = big_buff[:self.PACKET_LENGTH]
+        big_buff = big_buff[self.PACKET_LENGTH:]
+        if self.controller and self.controller.handle_packet:
+            convhex = " ".join(["{:02x}".format(bytes) for bytes in small_buff])
+            self.controller.handle_packet('[RX]: ' + convhex.upper())
+        while len(big_buff)>=len(small_buff):
+            small_buff = big_buff[:self.PACKET_LENGTH]
+            big_buff = big_buff[self.PACKET_LENGTH:]
+            if self.controller and self.controller.handle_packet:
+                convhex = " ".join(["{:02x}".format(bytes) for bytes in small_buff])
+                self.controller.handle_packet('[RX]: ' + convhex.upper())
+        return big_buff
+            
     def data_received(self, data):
         """\
         Called when data is received from the serial port
         Append bytes till buffer is full and handle the packet.
         """
         self.buffer.extend(data)
+        out = " ".join(["{:02x}".format(bytes) for bytes in data])
         if len(self.buffer) >= self.PACKET_LENGTH:
-            temp_buff = self.buffer[:self.PACKET_LENGTH]
-            self.buffer = self.buffer[self.PACKET_LENGTH:]
-            # TODO: Handle this
-            if self.controller and self.controller.handle_packet:
-                convhex = " ".join(["{:02x}".format(bytes) for bytes in temp_buff])
-                self.controller.handle_packet('[RX]: ' + convhex.upper())
+            self.buffer=self.chunk_and_handle_packets(self.buffer)
             
     
     def send_data(self, data):
@@ -50,9 +64,9 @@ class FixedLengthPacketHandler(Protocol):
         Called when the serial port is closed or the reader loop terminated
         otherwise.
         """
-        print(f'Connection Lost')
         self.transport = None
         self.buffer = bytearray()
+        self.isConnected = False
         if self.controller and self.controller.disconnection_callback:
             self.controller.disconnection_callback()
         if isinstance(exc, Exception):
@@ -73,34 +87,37 @@ class SerialController:
     _rt:ReaderThread
     _proto:FixedLengthPacketHandler
     
-    def __init__(self, comPortName:str = None, conf:dict = None) -> None:
+    def __init__(self, model:MainModel) -> None:
         
         self._sp = None
+        self._proto = None
+        self._model= model
+        conf = self._model.get_all_port_settings()
+        print(conf)
         if conf:
             for setting in conf:
                 if setting in self._conf:
                     self._conf[setting]=conf[setting]
                 else:
-                    raise ValueError(f'Unsupported or invalid setting {setting}')
-        
-        if comPortName:
-            self.set_comport(comPortName)
-            
+                    raise ValueError(f'Unsupported or invalid setting {setting}')                   
         self.connection_callback = lambda : print('connection_callback')
         self.disconnection_callback = lambda : print('disconnection_callback')
         self.handle_packet = lambda : print('handle_packet')
     
-    def set_comport(self, comPortName):
+    def set_comport(self, comPortName:str, conf:dict = None):
         '''\
         Set comport
         '''
         availablePorts = self.list_serial_ports()
         if comPortName in availablePorts:
             if self._sp:
-                self.disconnect()
+                if self._sp.is_open:
+                    self.disconnect()
                 self._sp = None
             self._selectedPortName = comPortName
             try:
+                if conf:
+                    self._conf = conf
                 self._sp = Serial(self._selectedPortName)
                 self._sp.baudrate = self._conf['baudrate']
                 self._sp.bytesize=self._conf['bytesize']
@@ -113,7 +130,7 @@ class SerialController:
             except SerialException as e:
                 print(f'Cannot open COM Port:{self._selectedPortName}, {e}')
         else:
-            raise ValueError('Port {comPortName} doesn\'t exist')
+            raise ValueError(f'Port {comPortName} doesn\'t exist')
         
     def connect(self):
         '''\
@@ -128,7 +145,7 @@ class SerialController:
         '''\
         Attempts to disconnect to the specified serial port
         '''
-        if self._rt is not None:
+        if self._proto is not None:
             try:
                 self._rt.close()
             except Exception as e:
@@ -151,6 +168,7 @@ class SerialController:
     def serial_packet_handler(self):
         self._proto = FixedLengthPacketHandler(self)
         return self._proto
+    
         
     @staticmethod
     def list_serial_ports() -> list:
@@ -166,7 +184,8 @@ if __name__ == "__main__":
     TEST_PORT = 'COM9'
     ports = SerialController.list_serial_ports()
     portSetting = {'baudrate':115200}
-    sPort = SerialController(TEST_PORT, portSetting)
+    sPort = SerialController()
+    sPort.set_comport(TEST_PORT)
     with sPort as device:
         sleep(1)
     print('End')
