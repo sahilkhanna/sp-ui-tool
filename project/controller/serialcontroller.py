@@ -27,19 +27,29 @@ class FixedLengthPacketHandler(Protocol):
         if self.controller and self.controller.connection_callback:
             self.controller.connection_callback()
 
+    def chunk_and_handle_packets(self, big_buff:bytearray)->bytearray:
+        small_buff = big_buff[:self.PACKET_LENGTH]
+        big_buff = big_buff[self.PACKET_LENGTH:]
+        if self.controller and self.controller.handle_packet:
+            convhex = " ".join(["{:02x}".format(bytes) for bytes in small_buff])
+            self.controller.handle_packet('[RX]: ' + convhex.upper())
+        while len(big_buff)>=len(small_buff):
+            small_buff = big_buff[:self.PACKET_LENGTH]
+            big_buff = big_buff[self.PACKET_LENGTH:]
+            if self.controller and self.controller.handle_packet:
+                convhex = " ".join(["{:02x}".format(bytes) for bytes in small_buff])
+                self.controller.handle_packet('[RX]: ' + convhex.upper())
+        return big_buff
+            
     def data_received(self, data):
         """\
         Called when data is received from the serial port
         Append bytes till buffer is full and handle the packet.
         """
         self.buffer.extend(data)
+        out = " ".join(["{:02x}".format(bytes) for bytes in data])
         if len(self.buffer) >= self.PACKET_LENGTH:
-            temp_buff = self.buffer[:self.PACKET_LENGTH]
-            self.buffer = self.buffer[self.PACKET_LENGTH:]
-            # TODO: Handle this
-            if self.controller and self.controller.handle_packet:
-                convhex = " ".join(["{:02x}".format(bytes) for bytes in temp_buff])
-                self.controller.handle_packet('[RX]: ' + convhex.upper())
+            self.buffer=self.chunk_and_handle_packets(self.buffer)
             
     
     def send_data(self, data):
