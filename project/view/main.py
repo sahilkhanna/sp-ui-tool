@@ -1,3 +1,4 @@
+from datetime import datetime
 import PySimpleGUI as gui
 from project.controller.serialcontroller import SerialController
 from project.controller.maincontroller import MainController
@@ -34,7 +35,8 @@ class MainUI:
                            '&Encoding',['bytes','string']], ],      
                 ['&Help', EV_MENU_ABOUT], ]   
     
-    APPEND_TX_MSG = "[TX]: "
+    APPEND_TX_MSG = "[TX -"
+    APPEND_RX_MSG = "[RX -"
     
     LEFT_COLUMN_WIDTH = 40
     RIGHT_COLUMN_WIDTH = 80
@@ -129,16 +131,16 @@ class MainUI:
     def send_msg(self, msg:str):
         if len(msg) > 0:
             self._controller.send_packet(bytearray.fromhex(msg))
-            self.update_console(self.APPEND_TX_MSG + msg)
+            self.update_console(msg, True)
         else:
             gui.popup_error("Message is empty! No can do", title="Yuck", 
                             auto_close=True, auto_close_duration=3, no_titlebar=True)
         
-    def update_console(self, msg):
-        if self.APPEND_TX_MSG in msg:
-            gui.cprint(msg, t='green')
+    def update_console(self, msg, isTX=False):
+        if isTX:
+            gui.cprint(f'{self.APPEND_TX_MSG} {datetime.now()}]: {msg}', t='green')
         else:
-            gui.cprint(msg, t='red')
+            gui.cprint(f'{self.APPEND_RX_MSG} {datetime.now()}]: {msg}', t='red')
     
     def about_popup(self):
         gui.popup('Serial Port Gui Tool', 'Sahil Khanna', 'https://github.com/sahilkhanna/sp-ui-tool',
