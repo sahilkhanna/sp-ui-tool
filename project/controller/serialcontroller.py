@@ -36,13 +36,13 @@ class FixedLengthPacketHandler(Protocol):
         big_buff = big_buff[self.PACKET_LENGTH:]
         if self.controller and self.controller.handle_packet:
             convhex = " ".join(["{:02x}".format(bytes) for bytes in small_buff])
-            self.controller.handle_packet(f'[RX - {datetime.now()}]: {convhex.upper()}')
+            self.controller.handle_packet(f'{convhex.upper()}')
         while len(big_buff)>=len(small_buff):
             small_buff = big_buff[:self.PACKET_LENGTH]
             big_buff = big_buff[self.PACKET_LENGTH:]
             if self.controller and self.controller.handle_packet:
                 convhex = " ".join(["{:02x}".format(bytes) for bytes in small_buff])
-                self.controller.handle_packet(f'[RX - {datetime.now()}]: {convhex.upper()}')
+                self.controller.handle_packet(f'{convhex.upper()}')
         return big_buff
             
     def data_received(self, data):
