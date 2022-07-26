@@ -26,6 +26,8 @@ class MainController():
         self._serialController.connection_callback = connectionCb
         self._serialController.disconnection_callback = disconnectionCb
         
+    def clear_serial_rx_buffer(self) -> None:
+        self._serialController.clear_rx_buffer()
         
     def save_project_settings(self, filename:str):
         self._mainModel.save_project_file(filename)
@@ -41,3 +43,4 @@ class MainController():
     
     def list_serial_ports(self) -> list:
         return self._serialController.list_serial_ports()
+    
