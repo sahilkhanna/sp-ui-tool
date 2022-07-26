@@ -1,4 +1,5 @@
 from time import sleep
+from datetime import datetime
 from serial import Serial, SerialException
 from serial.threaded import Protocol, ReaderThread
 from serial.tools import list_ports
@@ -17,12 +18,15 @@ class FixedLengthPacketHandler(Protocol):
         self.controller = controller
         self.transport = None
         self.isConnected = False
-        
+    
+    def clear_buffer(self):
+        self.buffer = bytearray()
+         
     def connection_made(self, transport):
         """Called when reader thread is started"""
         super(FixedLengthPacketHandler, self).connection_made(transport)
         self.transport = transport
-        self.buffer = bytearray()
+        self.clear_buffer()
         self.isConnected = True
         if self.controller and self.controller.connection_callback:
             self.controller.connection_callback()
@@ -32,13 +36,13 @@ class FixedLengthPacketHandler(Protocol):
         big_buff = big_buff[self.PACKET_LENGTH:]
         if self.controller and self.controller.handle_packet:
             convhex = " ".join(["{:02x}".format(bytes) for bytes in small_buff])
-            self.controller.handle_packet('[RX]: ' + convhex.upper())
+            self.controller.handle_packet(f'[RX - {datetime.now()}]: {convhex.upper()}')
         while len(big_buff)>=len(small_buff):
             small_buff = big_buff[:self.PACKET_LENGTH]
             big_buff = big_buff[self.PACKET_LENGTH:]
             if self.controller and self.controller.handle_packet:
                 convhex = " ".join(["{:02x}".format(bytes) for bytes in small_buff])
-                self.controller.handle_packet('[RX]: ' + convhex.upper())
+                self.controller.handle_packet(f'[RX - {datetime.now()}]: {convhex.upper()}')
         return big_buff
             
     def data_received(self, data):
@@ -51,7 +55,6 @@ class FixedLengthPacketHandler(Protocol):
         if len(self.buffer) >= self.PACKET_LENGTH:
             self.buffer=self.chunk_and_handle_packets(self.buffer)
             
-    
     def send_data(self, data):
         """\
         Called when serialport needs to send data. You may format it 
@@ -65,7 +68,7 @@ class FixedLengthPacketHandler(Protocol):
         otherwise.
         """
         self.transport = None
-        self.buffer = bytearray()
+        self.clear_buffer()
         self.isConnected = False
         if self.controller and self.controller.disconnection_callback:
             self.controller.disconnection_callback()
@@ -137,6 +140,7 @@ class SerialController:
         Attempts to connect to the specified serial port
         '''
         try:
+            self.clear_rx_buffer()
             self._rt.start()
         except AttributeError as e:
             print(f'Cannot connect to port:{self._selectedPortName}, {e}')
@@ -146,6 +150,7 @@ class SerialController:
         Attempts to disconnect to the specified serial port
         '''
         if self._proto is not None:
+            self.clear_rx_buffer()
             try:
                 self._rt.close()
             except Exception as e:
@@ -169,6 +174,9 @@ class SerialController:
         self._proto = FixedLengthPacketHandler(self)
         return self._proto
     
+    def clear_rx_buffer(self):
+        if self._proto is not None:
+            self._proto.clear_buffer()
         
     @staticmethod
     def list_serial_ports() -> list:

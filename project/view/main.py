@@ -160,6 +160,9 @@ class MainUI:
         #         # self.MENU_DEF[idx]='!'+self.MENU_DEF[idx]
         #     break
     
+    def clear_btn_pressed(self):
+        self._ui[self.KEY_CONSOLE].update(value='')
+        self._controller.clear_serial_rx_buffer()
     def open_project_file(self):
         filename = gui.popup_get_file('file to open', file_types=(( 'Porty Project (.prtyprj)','.prtyprj'),), no_window=True)
         self._controller.open_project_settings(filename)
@@ -194,7 +197,7 @@ class MainUI:
                     else:
                         self.open_port_connection()
                 elif event == self.KEY_CLEAR_TERMINAL:
-                    self._ui[self.KEY_CONSOLE].update(value='')
+                    self.clear_btn_pressed()
                 elif event == self.KEY_ADD_MSG_BTN:
                     self.update_msg_list(values[self.KEY_SEND_MSG_INPUT], True)
                 elif event == self.KEY_REMOVE_MSG_BTN:
