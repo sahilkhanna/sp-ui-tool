@@ -1,6 +1,8 @@
 # Serial Port GUI Tool
 
-This is a boilerplate template for python project
+Serial Port Gui Tool
+
+![Porty](docs/porty.png?raw=true "Porty")
 
 ## Setup
 
