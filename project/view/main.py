@@ -2,6 +2,8 @@ from datetime import datetime
 import PySimpleGUI as gui
 from project.controller.maincontroller import MainController
 
+ICON_FILE_PATH = 'assets/logo.ico'
+
 
 class MainUI:
     KEY_MSG_LIST = "MSG_LIST"
@@ -117,7 +119,8 @@ class MainUI:
              gui.Column(console_column, expand_x=True, expand_y=True),
              ]
         ]
-        self._ui = gui.Window(title, self._layout, resizable=True)
+        self._ui = gui.Window(title, self._layout, resizable=True,
+                              icon=ICON_FILE_PATH)
         gui.cprint_set_output_destination(self._ui, self.KEY_CONSOLE)
         self._isConnected = False
 
@@ -175,24 +178,24 @@ class MainUI:
                             title="Yuck",
                             auto_close=True,
                             auto_close_duration=3,
-                            no_titlebar=True)
+                            no_titlebar=True,
+                            icon=ICON_FILE_PATH)
 
     def update_console(self, msg, isTX=False):
         if isTX:
-            gui.cprint(f'{self.APPEND_TX_MSG}\
-                {datetime.now()}]: {msg}', t='green')
+            gui.cprint(f'{self.APPEND_TX_MSG} {datetime.now()}]: {msg}', t='green') # NOQA
         else:
-            gui.cprint(f'{self.APPEND_RX_MSG}\
-                {datetime.now()}]: {msg}', t='red')
+            gui.cprint(f'{self.APPEND_RX_MSG} {datetime.now()}]: {msg}', t='red') # NOQA
 
     def about_popup(self):
         gui.popup('Serial Port Gui Tool',
                   'Sahil Khanna',
                   'https://github.com/sahilkhanna/sp-ui-tool',
-                  grab_anywhere=True)
+                  grab_anywhere=True,
+                  icon=ICON_FILE_PATH)
 
     def popup_error(self, msg: str):
-        gui.popup_error(msg, title="Uh Oh!")
+        gui.popup_error(msg, title="Uh Oh!", icon=ICON_FILE_PATH)
 
     def enable_menu_item(self, menuElement, enable=True):
         for idx, el in enumerate(self.MENU_DEF):
@@ -218,7 +221,8 @@ class MainUI:
         filename = gui.popup_get_file('file to open',
                                       file_types=(('Porty Project (.prtyprj)',
                                                    '.prtyprj'),),
-                                      no_window=True)
+                                      no_window=True,
+                                      icon=ICON_FILE_PATH)
         self._controller.open_project_settings(filename)
         self._msgList = self._controller.get_send_sequences()
         self._ui[self.KEY_MSG_LIST].update(values=self._msgList)
@@ -229,7 +233,8 @@ class MainUI:
                                       file_types=(('Porty Project (.prtyprj)',
                                                    '.prtyprj'),),
                                       save_as=True,
-                                      no_window=True)
+                                      no_window=True,
+                                      icon=ICON_FILE_PATH)
         self._controller.save_project_settings(filename)
 
     def _debug_print_var(self, var):
