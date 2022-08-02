@@ -5,5 +5,4 @@ def return_as_int(value) -> int:
     elif type(value) == int:
         return value
     else:
-        raise TypeError(f'Incorrect Baudrate type\
-            {type(value)}')
+        raise TypeError(f'Incorrect type {type(value)}')
