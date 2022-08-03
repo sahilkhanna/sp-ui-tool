@@ -1,8 +1,10 @@
 from datetime import datetime
 import PySimpleGUI as gui
 from project.controller.maincontroller import MainController
-
-ICON_FILE_PATH = 'assets/logo.ico'
+import os
+import sys
+bundle_dir = getattr(sys, '_MEIPASS', os.getcwd())
+ICON_FILE_PATH = os.path.abspath(os.path.join(bundle_dir, 'assets/logo.ico'))
 
 
 class MainUI:

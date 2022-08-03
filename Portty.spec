@@ -8,7 +8,7 @@ a = Analysis(
     ['entry.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('assets/logo.ico', 'assets')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -28,7 +28,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='Porty',
+    name='Portty',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -41,4 +41,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon='assets\\logo.ico',
 )
