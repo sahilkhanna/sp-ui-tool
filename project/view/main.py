@@ -23,38 +23,39 @@ class MainUI:
     CONSOLE_RIGHT_CLICK_MENU = ['',
                                 [KEY_CONSOLE_MENU_COPY_SELECTED,
                                  KEY_CONSOLE_MENU_COPY_ALL]]
-    EV_MENU_OPEN_PROJECT = 'Open Project'
-    EV_MENU_SAVE_PROJECT = 'Save'
-    EV_MENU_SAVE_AS_PROJECT = 'Save as'
-    EV_MENU_QUIT = 'Quit'
-    EV_MENU_ABOUT = '&About'
-    EV_MENU_BAUDRATE_9600 = '9600'
-    EV_MENU_BAUDRATE_19200 = '19200'
-    EV_MENU_BAUDRATE_38400 = '38400'
-    EV_MENU_BAUDRATE_57600 = '57600'
-    EV_MENU_BAUDRATE_115200 = '115200'
-    BAUD_RATES = [EV_MENU_BAUDRATE_9600,
-                  EV_MENU_BAUDRATE_19200,
-                  EV_MENU_BAUDRATE_38400,
-                  EV_MENU_BAUDRATE_57600,
-                  EV_MENU_BAUDRATE_115200]
+    KEY_MENU_OPEN_PROJECT = 'Open Project'
+    KEY_MENU_SAVE_PROJECT = 'Save'
+    KEY_MENU_SAVE_AS_PROJECT = 'Save as'
+    KEY_MENU_QUIT = 'Quit'
+    KEY_MENU_ABOUT = 'About'
+    KEY_MENU_BAUDRATE_9600 = '9600'
+    KEY_MENU_BAUDRATE_19200 = '19200'
+    KEY_MENU_BAUDRATE_38400 = '38400'
+    KEY_MENU_BAUDRATE_57600 = '57600'
+    KEY_MENU_BAUDRATE_115200 = '115200'
+    BAUD_RATES = [KEY_MENU_BAUDRATE_9600,
+                  KEY_MENU_BAUDRATE_19200,
+                  KEY_MENU_BAUDRATE_38400,
+                  KEY_MENU_BAUDRATE_57600,
+                  KEY_MENU_BAUDRATE_115200]
     MENU_DEF = [['&File',
-                 [EV_MENU_OPEN_PROJECT,
-                  EV_MENU_SAVE_PROJECT,
-                  EV_MENU_SAVE_AS_PROJECT,
-                  EV_MENU_QUIT]],
+                 [KEY_MENU_OPEN_PROJECT,
+                  KEY_MENU_SAVE_PROJECT,
+                  KEY_MENU_SAVE_AS_PROJECT,
+                  KEY_MENU_QUIT]],
                 ['&Settings',
                  ['&Baudrate',
                   BAUD_RATES,
                   '&Encoding',
                   ['bytes', 'string']]
                  ],
-                ['&Help', EV_MENU_ABOUT]]
+                ['&Help', '&' + KEY_MENU_ABOUT]]
     APPEND_TX_MSG = "[TX -"
     APPEND_RX_MSG = "[RX -"
     LEFT_COLUMN_WIDTH = 40
     RIGHT_COLUMN_WIDTH = 80
     _controller: MainController
+    _filename = None
 
     def __init__(self, title: str, controller: MainController) -> None:
         self._controller = controller
@@ -211,10 +212,6 @@ class MainUI:
                 self._ui['menu'].update(self.MENU_DEF)
                 break
 
-            # print(self.MENU_DEF[idx], idx, menuElement)
-        #         # self.MENU_DEF[idx]='!'+self.MENU_DEF[idx]
-        #     break
-
     def clear_btn_pressed(self):
         self._ui[self.KEY_CONSOLE].update(value='')
         self._controller.clear_serial_rx_buffer()
@@ -225,10 +222,18 @@ class MainUI:
                                                    '.prtyprj'),),
                                       no_window=True,
                                       icon=ICON_FILE_PATH)
-        self._controller.open_project_settings(filename)
-        self._msgList = self._controller.get_send_sequences()
-        self._ui[self.KEY_MSG_LIST].update(values=self._msgList)
-        self.set_port(self._controller.get_saved_port_name())
+        if len(filename) > 0:
+            self._controller.open_project_settings(filename)
+            self._filename = filename
+            self._msgList = self._controller.get_send_sequences()
+            self._ui[self.KEY_MSG_LIST].update(values=self._msgList)
+            self.set_port(self._controller.get_saved_port_name())
+
+    def save_project_file(self):
+        if self._filename:
+            self._controller.save_project_settings(self._filename)
+        else:
+            self.saveas_project_file()
 
     def saveas_project_file(self):
         filename = gui.popup_get_file('file to Save',
@@ -253,7 +258,7 @@ class MainUI:
         while True:
             try:
                 event, values = self._ui.read(timeout=10)
-                if event in [gui.WIN_CLOSED, self.EV_MENU_QUIT]:
+                if event in [gui.WIN_CLOSED, self.KEY_MENU_QUIT]:
                     break
                 elif event == self.KEY_REFRESH_PORT_LIST:
                     self.refresh_port_list()
@@ -279,15 +284,17 @@ class MainUI:
                         self.update_send_msg_input(values[self.KEY_MSG_LIST][0])
                     except IndexError:
                         pass
-                elif event == self.EV_MENU_OPEN_PROJECT:
+                elif event == self.KEY_MENU_OPEN_PROJECT:
                     self.open_project_file()
-                elif event == self.EV_MENU_SAVE_AS_PROJECT:
+                elif event == self.KEY_MENU_SAVE_PROJECT:
+                    self.save_project_file()
+                elif event == self.KEY_MENU_SAVE_AS_PROJECT:
                     self.saveas_project_file()
-                elif event == self.EV_MENU_ABOUT:
+                elif event == self.KEY_MENU_ABOUT:
+                    print('popup')
                     self.about_popup()
                 elif event in self.BAUD_RATES:
                     self._controller.update_port_baudrate(event)
-                    # self._debug_print_var((event, values))
                 if self._isConnected:
                     self._ui[self.KEY_PORT_LIST].update(disabled=True)
                     self._ui[self.KEY_OPEN_PORT].update(text='Close')
