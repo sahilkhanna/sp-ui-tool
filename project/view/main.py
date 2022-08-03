@@ -1,6 +1,7 @@
 from datetime import datetime
 import PySimpleGUI as gui
 from project.controller.maincontroller import MainController
+from project.__version import __version__
 import os
 import sys
 bundle_dir = getattr(sys, '_MEIPASS', os.getcwd())
@@ -122,7 +123,7 @@ class MainUI:
              gui.Column(console_column, expand_x=True, expand_y=True),
              ]
         ]
-        self._ui = gui.Window(title, self._layout, resizable=True,
+        self._ui = gui.Window(title + ' - ' + __version__, self._layout, resizable=True,
                               icon=ICON_FILE_PATH)
         gui.cprint_set_output_destination(self._ui, self.KEY_CONSOLE)
         self._isConnected = False
@@ -192,8 +193,9 @@ class MainUI:
 
     def about_popup(self):
         gui.popup('Serial Port Gui Tool',
-                  'Sahil Khanna',
+                  'Author - Sahil Khanna',
                   'https://github.com/sahilkhanna/sp-ui-tool',
+                  title='Portty' + ' - ' + __version__,
                   grab_anywhere=True,
                   icon=ICON_FILE_PATH)
 

@@ -7,5 +7,5 @@ class Project:
     def main(self):
         mainModel = MainModel()
         mainController = MainController(mainModel)
-        mainWindow = MainUI('Porty', mainController)
+        mainWindow = MainUI('Portty', mainController)
         mainWindow.launch()
