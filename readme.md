@@ -1,5 +1,6 @@
 # Serial Port GUI Tool
 [![Actions Status](https://github.com/sahilkhanna/sp-ui-tool/workflows/Build%20and%20Test/badge.svg)](https://github.com/sahilkhanna/sp-ui-tool/actions)
+
 Serial Port Gui Tool
 
 ![Porty](docs/porty.png?raw=true "Porty")
