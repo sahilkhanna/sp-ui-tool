@@ -1,7 +1,10 @@
-# Serial Port GUI Tool
+# Portty
 [![Actions Status](https://github.com/sahilkhanna/sp-ui-tool/workflows/Build%20and%20Test/badge.svg)](https://github.com/sahilkhanna/sp-ui-tool/actions)
+[![GitHub release](https://img.shields.io/github/release/sahilkhanna/sp-ui-tool.svg)](https://github.com/sahilkhanna/sp-ui-tool/releases/)
+[![GitHub license](https://img.shields.io/github/license/sahilkhanna/sp-ui-tool.svg)](https://github.com/sahilkhanna/sp-ui-tool/blob/master/LICENSE)
+[![GitHub branches](https://badgen.net/github/branches/sahilkhanna/sp-ui-tool)](https://github.com/sahilkhanna/sp-ui-tool/)
 
-Serial Port Gui Tool
+__Serial Port Gui Tool__
 
 ![Porty](docs/porty.png?raw=true "Porty")
 
