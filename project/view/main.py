@@ -1,6 +1,7 @@
 from datetime import datetime
 import PySimpleGUI as gui
 from project.controller.maincontroller import MainController
+from project.controller.serialcontroller import PacketHandlers
 from project.__version import __version__
 import os
 import sys
@@ -48,7 +49,10 @@ class MainUI:
                  ['&Baudrate',
                   BAUD_RATES,
                   '&Encoding',
-                  ['bytes', 'string']]
+                  ['bytes', 'string'],
+                  '&Packet Handler',
+                  [handler.name for handler in PacketHandlers]
+                  ],
                  ],
                 ['&Help', '&' + KEY_MENU_ABOUT]]
     APPEND_TX_MSG = "[TX -"

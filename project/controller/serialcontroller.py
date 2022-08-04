@@ -1,10 +1,21 @@
+from enum import Enum
 from time import sleep
 from serial import Serial, SerialException
-from serial.threaded import Protocol, ReaderThread
+from serial.threaded import Protocol, ReaderThread, LineReader
 from serial.tools import list_ports
 
-from project.model.main import MainModel
 
+class PacketHandlers(Enum):
+    FIXED_PACKET = 0
+    LINE_READER = 1
+    
+    
+if __name__ == "__main__":
+    a = [handler.name for handler in PacketHandlers]
+    b = PacketHandlers[a[0]]
+    print(b)
+
+from project.model.main import MainModel
 
 class FixedLengthPacketHandler(Protocol):
     """\
@@ -89,7 +100,10 @@ class SerialController:
     }
     _sp: Serial
     _rt: ReaderThread
-    _proto: FixedLengthPacketHandler
+    packetHandlers = {
+        PacketHandlers.FIXED_PACKET: FixedLengthPacketHandler,
+        PacketHandlers.LINE_READER: LineReader
+    }
 
     def __init__(self, model: MainModel) -> None:
 
@@ -171,8 +185,12 @@ class SerialController:
     def send_packet(self, msg):
         self._proto.send_data(msg)
 
+    def set_packet_handler(self, handler: PacketHandlers):
+        self._proto = self.packetHandlers[handler](self)
+        self._rt = ReaderThread(self._sp, self._proto)
+
     def serial_packet_handler(self):
-        self._proto = FixedLengthPacketHandler(self)
+        self._proto = self.packetHandlers["fixed_length"](self)
         return self._proto
 
     def clear_rx_buffer(self):

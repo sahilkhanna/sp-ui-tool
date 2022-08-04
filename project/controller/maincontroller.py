@@ -1,5 +1,5 @@
 
-from project.controller.serialcontroller import SerialController
+from project.controller.serialcontroller import SerialController, PacketHandlers
 from project.model.main import MainModel
 
 
@@ -30,6 +30,9 @@ class MainController():
         self._serialController.set_comport(
             comPortName=self._mainModel.get_port_name(),
             conf=self._mainModel.get_all_port_settings())
+
+    def update_packet_handler(self, handler: PacketHandlers):
+        self._serialController.set_packet_handler(handler)
 
     def update_serial_cb(self, handlePacketCb, connectionCb, disconnectionCb):
         self._serialController.handle_packet = handlePacketCb
