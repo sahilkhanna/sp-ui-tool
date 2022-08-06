@@ -3,6 +3,7 @@ import PySimpleGUI as gui
 from project.controller.maincontroller import MainController
 from project.controller.serialcontroller import PacketHandlers
 from project.__version import __version__
+from project.__version import __title__
 import os
 import sys
 bundle_dir = getattr(sys, '_MEIPASS', os.getcwd())
@@ -40,6 +41,7 @@ class MainUI:
                   KEY_MENU_BAUDRATE_38400,
                   KEY_MENU_BAUDRATE_57600,
                   KEY_MENU_BAUDRATE_115200]
+    PACKETHANDLERS = [handler.name for handler in PacketHandlers]
     MENU_DEF = [['&File',
                  [KEY_MENU_OPEN_PROJECT,
                   KEY_MENU_SAVE_PROJECT,
@@ -48,10 +50,8 @@ class MainUI:
                 ['&Settings',
                  ['&Baudrate',
                   BAUD_RATES,
-                  '&Encoding',
-                  ['bytes', 'string'],
                   '&Packet Handler',
-                  [handler.name for handler in PacketHandlers]
+                  PACKETHANDLERS
                   ],
                  ],
                 ['&Help', '&' + KEY_MENU_ABOUT]]
@@ -127,7 +127,8 @@ class MainUI:
              gui.Column(console_column, expand_x=True, expand_y=True),
              ]
         ]
-        self._ui = gui.Window(title + ' - ' + __version__, self._layout, resizable=True,
+        self._ui = gui.Window(title + ' - ' + __version__,
+                              self._layout, resizable=True,
                               icon=ICON_FILE_PATH)
         gui.cprint_set_output_destination(self._ui, self.KEY_CONSOLE)
         self._isConnected = False
@@ -179,7 +180,7 @@ class MainUI:
 
     def send_msg(self, msg: str):
         if len(msg) > 0:
-            self._controller.send_packet(bytearray.fromhex(msg))
+            self._controller.send_packet(msg)
             self.update_console(msg, True)
         else:
             gui.popup_error("Message is empty! No can do",
@@ -199,7 +200,7 @@ class MainUI:
         gui.popup('Serial Port Gui Tool',
                   'Author - Sahil Khanna',
                   'https://github.com/sahilkhanna/sp-ui-tool',
-                  title='Portty' + ' - ' + __version__,
+                  title=__title__ + ' - ' + __version__,
                   grab_anywhere=True,
                   icon=ICON_FILE_PATH)
 
@@ -287,7 +288,7 @@ class MainUI:
                     self.send_msg(values[self.KEY_SEND_MSG_INPUT])
                 elif event == self.KEY_MSG_LIST:
                     try:
-                        self.update_send_msg_input(values[self.KEY_MSG_LIST][0])
+                        self.update_send_msg_input(values[self.KEY_MSG_LIST][0]) # noqa
                     except IndexError:
                         pass
                 elif event == self.KEY_MENU_OPEN_PROJECT:
@@ -301,6 +302,8 @@ class MainUI:
                     self.about_popup()
                 elif event in self.BAUD_RATES:
                     self._controller.update_port_baudrate(event)
+                elif event in self.PACKETHANDLERS:
+                    self._controller.update_packet_handler(PacketHandlers[event])  # noqa
                 if self._isConnected:
                     self._ui[self.KEY_PORT_LIST].update(disabled=True)
                     self._ui[self.KEY_OPEN_PORT].update(text='Close')

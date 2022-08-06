@@ -1,5 +1,6 @@
 
-from project.controller.serialcontroller import SerialController, PacketHandlers
+from project.controller.serialcontroller import SerialController
+from project.controller.serialcontroller import PacketHandlers
 from project.model.main import MainModel
 
 
