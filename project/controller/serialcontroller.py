@@ -1,9 +1,16 @@
+from enum import Enum
 from time import sleep
 from serial import Serial, SerialException
 from serial.threaded import Protocol, ReaderThread
+from serial.threaded import LineReader, FramedPacket
 from serial.tools import list_ports
-
 from project.model.main import MainModel
+
+
+class PacketHandlers(Enum):
+    FIXED_PACKET = 0
+    LINE_READER = 1
+    FRAMED_PACKET = 2
 
 
 class FixedLengthPacketHandler(Protocol):
@@ -36,13 +43,13 @@ class FixedLengthPacketHandler(Protocol):
         small_buff = big_buff[:self.PACKET_LENGTH]
         big_buff = big_buff[self.PACKET_LENGTH:]
         if self.controller and self.controller.handle_packet:
-            convhex = " ".join(["{:02x}".format(bytes) for bytes in small_buff])
+            convhex = " ".join(["{:02x}".format(bytes) for bytes in small_buff])  # noqa
             self.controller.handle_packet(f'{convhex.upper()}')
         while len(big_buff) >= len(small_buff):
             small_buff = big_buff[:self.PACKET_LENGTH]
             big_buff = big_buff[self.PACKET_LENGTH:]
             if self.controller and self.controller.handle_packet:
-                convhex = " ".join(["{:02x}".format(bytes) for bytes in small_buff])
+                convhex = " ".join(["{:02x}".format(bytes) for bytes in small_buff])  # noqa
                 self.controller.handle_packet(f'{convhex.upper()}')
         return big_buff
 
@@ -55,12 +62,12 @@ class FixedLengthPacketHandler(Protocol):
         if len(self.buffer) >= self.PACKET_LENGTH:
             self.buffer = self.chunk_and_handle_packets(self.buffer)
 
-    def send_data(self, data):
+    def send_data(self, data: str):
         """\
         Called when serialport needs to send data. You may format it
         accordingly
         """
-        self.transport.write(data)
+        self.transport.write(bytearray.fromhex(data))
 
     def connection_lost(self, exc):
         """\
@@ -76,6 +83,65 @@ class FixedLengthPacketHandler(Protocol):
             raise exc
 
 
+class CustomLineReader(LineReader):
+
+    def __init__(self, controller):
+        super(CustomLineReader, self).__init__()
+        self.controller = controller
+        self.transport = None
+
+    def connection_made(self, transport):
+        super(CustomLineReader, self).connection_made(transport)
+        self.transport = transport
+        if self.controller and self.controller.connection_callback:
+            self.controller.connection_callback()
+
+    def connection_lost(self, exc):
+        """Forget transport"""
+        self.transport = None
+        if self.controller and self.controller.disconnection_callback:
+            self.controller.disconnection_callback()
+        if isinstance(exc, Exception):
+            raise exc
+
+    def handle_line(self, line):
+        if self.controller and self.controller.handle_packet:
+            self.controller.handle_packet(line)
+
+    def send_data(self, data: str):
+        self.write_line(data)
+
+
+class CustomFramedPacket(FramedPacket):
+
+    def __init__(self, controller):
+        super(CustomFramedPacket, self).__init__()
+        self.controller = controller
+        self.transport = None
+
+    def connection_made(self, transport):
+        super(CustomFramedPacket, self).connection_made(transport)
+        self.transport = transport
+        if self.controller and self.controller.connection_callback:
+            self.controller.connection_callback()
+
+    def connection_lost(self, exc):
+        """Forget transport"""
+        super(CustomFramedPacket, self).connection_lost(exc)
+        if self.controller and self.controller.disconnection_callback:
+            self.controller.disconnection_callback()
+        if isinstance(exc, Exception):
+            raise exc
+
+    def handle_packet(self, packet):
+        if self.controller and self.controller.handle_packet:
+            self.controller.handle_packet(packet.decode())
+
+    def send_data(self, data: str):
+        out = self.START + bytearray(data, "ascii") + self.STOP
+        self.transport.write(out)
+
+
 class SerialController:
     _selectedPortName: str
     _conf = {
@@ -89,13 +155,18 @@ class SerialController:
     }
     _sp: Serial
     _rt: ReaderThread
-    _proto: FixedLengthPacketHandler
+    packetHandlers = {
+        PacketHandlers.FIXED_PACKET: FixedLengthPacketHandler,
+        PacketHandlers.LINE_READER: CustomLineReader,
+        PacketHandlers.FRAMED_PACKET: CustomFramedPacket
+    }
 
     def __init__(self, model: MainModel) -> None:
 
         self._sp = None
         self._proto = None
         self._model = model
+        self._currentPacketHandler = PacketHandlers.FIXED_PACKET
         conf = self._model.get_all_port_settings()
         if conf:
             for setting in conf:
@@ -171,13 +242,18 @@ class SerialController:
     def send_packet(self, msg):
         self._proto.send_data(msg)
 
+    def set_packet_handler(self, handler: PacketHandlers):
+        self._currentPacketHandler = handler
+        self._rt = ReaderThread(self._sp, self.serial_packet_handler)
+
     def serial_packet_handler(self):
-        self._proto = FixedLengthPacketHandler(self)
+        self._proto = self.packetHandlers[self._currentPacketHandler](self)
         return self._proto
 
     def clear_rx_buffer(self):
         if self._proto is not None:
-            self._proto.clear_buffer()
+            if type(self._proto) == FixedLengthPacketHandler:
+                self._proto.clear_buffer()
 
     @staticmethod
     def list_serial_ports() -> list:

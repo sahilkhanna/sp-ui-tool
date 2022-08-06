@@ -1,5 +1,6 @@
 
 from project.controller.serialcontroller import SerialController
+from project.controller.serialcontroller import PacketHandlers
 from project.model.main import MainModel
 
 
@@ -31,6 +32,10 @@ class MainController():
             comPortName=self._mainModel.get_port_name(),
             conf=self._mainModel.get_all_port_settings())
 
+    def update_packet_handler(self, handler: PacketHandlers):
+        self._serialController.set_packet_handler(handler)
+        self._mainModel.update_packet_handler(handler.name)
+
     def update_serial_cb(self, handlePacketCb, connectionCb, disconnectionCb):
         self._serialController.handle_packet = handlePacketCb
         self._serialController.connection_callback = connectionCb
@@ -44,6 +49,8 @@ class MainController():
 
     def open_project_settings(self, filename: str):
         self._mainModel.load_project_file(filename)
+        packetHandlerName = self._mainModel.get_packet_handler()
+        self._serialController.set_packet_handler(PacketHandlers[packetHandlerName])  # noqa
 
     def update_send_sequence(self, sequence: list):
         self._mainModel.update_send_sequence(sequence)
