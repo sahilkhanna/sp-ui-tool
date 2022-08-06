@@ -3,3 +3,7 @@
 .vscode
 build
 dist
+htmlcov
+.coverage
+coverage.xml
+*,cover
