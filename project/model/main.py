@@ -52,11 +52,18 @@ class MainModel():
     def get_sequences(self) -> list:
         return self._sendSequence
 
+    def update_packet_handler(self, packethandler: str) -> None:
+        self._packetHandler = packethandler
+
+    def get_packet_handler(self) -> str:
+        return self._packetHandler
+
     def save_project_file(self, filepath: str):
         outData = {
             'port': self._portName,
             'portSetting': self._portSettings,
-            'sequences': self._sendSequence
+            'sequences': self._sendSequence,
+            'packetHandler': self._packetHandler
         }
         with open(filepath, "w+") as outfile:
             json.dump(outData, outfile)
@@ -71,4 +78,6 @@ class MainModel():
                 self._portName = projectSetting['port']
             if 'portSetting' in projectSetting:
                 self._portSettings = projectSetting['portSetting']
+            if 'packetHandler' in projectSetting:
+                self._packetHandler = projectSetting['packetHandler']
         return True
