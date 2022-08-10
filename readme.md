@@ -37,5 +37,5 @@ python entry.py
 Make sure to run this in the virtual environment.
 
 ```
-pyinstaller --name="Porty" --noconsole --onefile entry.py
+pyinstaller --name="Portty" --noconsole --windowed --add-data "assets/logo.ico;assets" --icon assets/logo.ico --onefile entry.py  
 ```
